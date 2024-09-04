@@ -55,6 +55,15 @@ db.on('disconnected',()=>{
 
 app.use('/api/user',userroute)
 app.use('/candidate',verifyToken,candidateroute)
+// app.get("/api/user/info",async(req,res)=>{
+//   try {
+//     const users = await user.find(); // Fetch all users from the collection
+//     res.status(200).json(users); // Send the data as JSON response
+// } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: "Internal server error" });
+// }
+// })
 
 app.listen(port, () => {
     console.log(`server is listening on port ${port}`)

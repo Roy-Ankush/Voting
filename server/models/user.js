@@ -60,6 +60,7 @@ user_schema.pre('save', async function (next) {
 user_schema.methods.comparePassword=async function(candidatepassword){
     try {
         const isMAtch=await bcrypt.compare(candidatepassword,this.password);
+        console.log("password is match",isMAtch)
         return isMAtch;
     } catch (error) {
         throw error;

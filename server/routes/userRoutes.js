@@ -1,6 +1,7 @@
 import express from 'express';
 import user from '../models/user.js';
-import {generateToken,verifyToken} from '../middleware/auth.js'
+import bcrypt from 'bcryptjs'
+import {generateToken,setAccessTokenCookie,setRefreshTokenCookie,verifyToken} from '../middleware/auth.js'
 
 const router = express.Router()
 
@@ -18,8 +19,6 @@ router.post("/signup",async (req,res)=>{
    }
    
     const token=generateToken(payload);
-    console.log("token is generated",token)
-
     res.status(200).json({response:response,token:token})
 } catch (error) {
         console.log(error)
@@ -31,19 +30,29 @@ router.post("/signup",async (req,res)=>{
 router.post('/login',async (req,res)=>{
     try {
         const{email,idNumber,password}=req.body
-        const user= await user.find({idNumber});
+        const users= await user.find({idNumber});
+        const userpassword=await bcrypt.compare(password,users[0].password);
         
-       if(!user || !(await user.comparePassword(password))){
+       if(!users){
         return res.status(401).json({error:"Invalid user or password"})
        }
-        
+       if(!userpassword){
+        console.log("wrong password")
+        return res.send(404).json({error:"Invalid password"});
+    }
+       
        const payload={
-        id:response.id
+        id:users[0].id
        }
        
-        const token=generateToken(payload);
-        console.log("token is generated",token)
-        res.status(200).json({token})
+       
+       const accessToken = generateToken(payload);
+       const refreshToken = generateToken(payload);
+
+       setAccessTokenCookie(res,accessToken);
+       setRefreshTokenCookie(res,refreshToken)
+        //sending the token in rensponse
+        return res.status(200).json({ accessToken, refreshToken, Login: true});
 
     } catch (error) {
         console.log(error)
@@ -72,7 +81,7 @@ router.put("/profile/password",verifyToken,async(req,res)=>{
         const userId=req.user.id;
         const {currentpassword,newpassword}=req.body;
 
-        const user=await user.findById({userId})
+        const user=await user.findById(userId)
 
         if( !(await user.comparePassword(currentpassword))){
             return res.status(401).json({error:"Invalid user or password"})
